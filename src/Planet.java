@@ -156,7 +156,11 @@ public class Planet
 
 			if (numSent > 0)
 			{
-				parent.addFleet(new Fleet(X, Y, numSent, owner, target));
+				//The ships leave from the border of this planet, facing the target
+				double dist = Math.hypot(target.X - X, target.Y - Y);
+				double launchX = X + (target.X - X) / dist * RADIUS;
+				double launchY = Y + (target.Y - Y) / dist * RADIUS;
+				parent.addFleet(new Fleet(launchX, launchY, numSent, owner, target, parent.getShipSpeed()));
 				numUnits -= numSent;
 			}
 		}

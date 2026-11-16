@@ -19,6 +19,7 @@ public class Game extends JFrame implements ActionListener
 	private Set<Planet> planets = null;
 
 	private Tournament parent = null; //Each game could potentially be part of a different tournament
+	private final double shipSpeed; //Flight speed of the ships in this game, given by the tournament
 
 	private static final int NUM_PLANETS = 16;
 
@@ -29,6 +30,7 @@ public class Game extends JFrame implements ActionListener
 		p1 = player1;
 		p2 = player2;
 		this.parent = parent;
+		shipSpeed = parent.getShipSpeed();
 
 		winner = null;
 		fleets = Collections.synchronizedSet(new HashSet<Fleet>());
@@ -125,7 +127,6 @@ public class Game extends JFrame implements ActionListener
 
 	public void drawAllFleets(Graphics g)
 	{
-		g.setFont(Fleet.TEXT_FONT);
 		synchronized(fleets)
 		{
 			for(Fleet f: fleets)
@@ -217,6 +218,10 @@ public class Game extends JFrame implements ActionListener
 				p.update();
 			}
 		}
+	}
+	public double getShipSpeed()
+	{
+		return shipSpeed;
 	}
 	public Set<Fleet> getAllFleets()
 	{

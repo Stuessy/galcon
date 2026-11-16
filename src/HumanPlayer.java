@@ -11,7 +11,7 @@ import javax.swing.SwingUtilities;
 /*
  * A player that is controlled by the mouse instead of an AI.
  * Left-click an own planet to select it, then left-click another planet to send half of its ships there.
- * Clicking another own planet switches the selection. Clicking the selected planet or empty space cancels it.
+ * This works for own, neutral and enemy planets. Clicking the selected planet or empty space cancels the selection.
  */
 public class HumanPlayer extends Player
 {
@@ -96,14 +96,14 @@ public class HumanPlayer extends Player
 		{
 			selectedPlanet = null; //Empty space or the selected planet: cancel the selection
 		}
-		else if (clicked.getOwner() == this)
-		{
-			selectedPlanet = clicked; //Own planet: select it
-		}
 		else if (selectedPlanet != null)
 		{
-			sendHalfOfShips(selectedPlanet, clicked); //Neutral or enemy planet: attack it
+			sendHalfOfShips(selectedPlanet, clicked); //Any other planet (own, neutral or enemy): send the fleet there
 			selectedPlanet = null;
+		}
+		else if (clicked.getOwner() == this)
+		{
+			selectedPlanet = clicked; //Own planet without selection: select it
 		}
 	}
 

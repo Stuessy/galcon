@@ -40,6 +40,7 @@ public class Tournament extends JFrame
 	private boolean completed;
 	private Player player1; //The players of this tournament, needed for the window hooks
 	private Player player2;
+	private final double shipSpeed; //Flight speed of all ships in this tournament
 	
 	public static void main(String args[])
 	{
@@ -54,11 +55,17 @@ public class Tournament extends JFrame
 	{
 		this(player1, player2, NUM_GAMES);
 	}
-	//Plays numGames games between the two players in one window
+	//Plays numGames games between the two players in one window, with the default ship speed
 	public Tournament(Player player1, Player player2, int numGames)
+	{
+		this(player1, player2, numGames, Fleet.SPEED);
+	}
+	//Plays numGames games between the two players in one window, all ships fly with shipSpeed
+	public Tournament(Player player1, Player player2, int numGames, double shipSpeed)
 	{
 		this.player1 = player1;
 		this.player2 = player2;
+		this.shipSpeed = shipSpeed;
 		
 		//Set up window
 		setName("Galcon AI Challenge");
@@ -147,6 +154,10 @@ public class Tournament extends JFrame
 		g.drawString(getResultMessage(), 40, 100);
 		g.drawString(player1.getPlayerName() + ": " + getNumWins(player1) + " won", 40, 200);
 		g.drawString(player2.getPlayerName() + ": " + getNumWins(player2) + " won", 40, 250);
+	}
+	public double getShipSpeed()
+	{
+		return shipSpeed;
 	}
 	public boolean isCompleted()
 	{
