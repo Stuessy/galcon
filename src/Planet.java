@@ -6,6 +6,8 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
+import java.util.Collections;
+import java.util.List;
 
 public class Planet 
 {
@@ -22,6 +24,12 @@ public class Planet
 	private int numUnits, updateCnt = 0;
 	private Player owner;
 	private Game parent;
+	private volatile int morale; //0-100, moves step by step towards realMorale (see MoraleModel)
+	private volatile int realMorale; //Target morale, from the ship ratio around the planet
+	private volatile int realShips; //Ship balance around the planet (friendly minus enemy)
+	int incomingFriendly, incomingEnemy; //Ships of fleets heading here, written only by MoraleModel.prepare
+	private double productionProgress = 0; //Part of the next unit, scaled by morale
+	private List<Planet> near = Collections.emptyList(); //Neighbours, set once per game (see PlanetNeighbours)
 
 	//Construct a planet owned by a particular person
 	public Planet(Player player, Game parent)
@@ -29,6 +37,7 @@ public class Planet
 		this.parent = parent;
 		owner = player;
 		numUnits = 100;
+		morale = realMorale = MoraleModel.HOME_START_MORALE;
 		RADIUS = MAX_SIZE;
 		PRODUCTION_TIME = MIN_PRODUCE_TIME;
 		//    	setupImage();
@@ -54,6 +63,7 @@ public class Planet
 		this.parent = parent;
 		owner = null;
 		numUnits = (int) (Math.random() * MAX_NEUTRAL_UNITS);
+		morale = realMorale = MoraleModel.NEUTRAL_START_MORALE;
 		RADIUS = (int) (Math.random() * (MAX_SIZE - MIN_SIZE) + MIN_SIZE);
 		PRODUCTION_TIME = (int) ((1 - ((double) RADIUS - MIN_SIZE) / (MAX_SIZE - MIN_SIZE)) * 
 				(MAX_PRODUCE_TIME - MIN_PRODUCE_TIME) + MIN_PRODUCE_TIME); //Calculate the time between productions
@@ -73,7 +83,7 @@ public class Planet
 	//Get this planet's information
 	public PlanetInfo getPlanetInfo()
 	{
-		return new PlanetInfo(owner, numUnits, X, Y, RADIUS, PRODUCTION_TIME);
+		return new PlanetInfo(owner, numUnits, X, Y, RADIUS, PRODUCTION_TIME, morale);
 	}
 
 	public int getRadius()
@@ -102,11 +112,19 @@ public class Planet
 		}
 	}
 
+	//One tick: moves the morale towards its target, then produces ships on owned planets
 	public void update()
 	{
-		if(owner != null && updateCnt % PRODUCTION_TIME == 0)
+		morale = MoraleModel.nextMorale(this, updateCnt);
+		if (owner != null)
 		{
-			numUnits++;
+			//Full morale gives one unit every PRODUCTION_TIME ticks, half morale half as many
+			productionProgress += morale / (double) MoraleModel.MAX_MORALE;
+			if (productionProgress >= PRODUCTION_TIME)
+			{
+				numUnits++;
+				productionProgress -= PRODUCTION_TIME;
+			}
 		}
 		updateCnt++;
 	}
@@ -114,6 +132,46 @@ public class Planet
 	public Player getOwner()
 	{
 		return owner;
+	}
+
+	public int getNumUnits()
+	{
+		return numUnits;
+	}
+
+	public int getMorale()
+	{
+		return morale;
+	}
+
+	public int getRealMorale()
+	{
+		return realMorale;
+	}
+
+	public int getRealShips()
+	{
+		return realShips;
+	}
+
+	public List<Planet> getNear()
+	{
+		return near;
+	}
+
+	void setNear(List<Planet> nearIn)
+	{
+		near = nearIn;
+	}
+
+	void setRealMorale(int value)
+	{
+		realMorale = value;
+	}
+
+	void setRealShips(int value)
+	{
+		realShips = value;
 	}
 
 	public void invade(Player player, int numUnitsIn)
@@ -129,6 +187,7 @@ public class Planet
 			{
 				owner = player; //Pass ownership of the planet to the invading player
 				numUnits = -numUnits; //Make the number of units positive again
+				productionProgress = 0; //Production starts afresh, the morale is kept
 			}
 		}
 	}
@@ -179,10 +238,10 @@ public class Planet
  */
 class PlanetInfo
 {	
-	public final int NUM_UNITS, X, Y, RADIUS, PRODUCTION_TIME;
+	public final int NUM_UNITS, X, Y, RADIUS, PRODUCTION_TIME, MORALE;
 	public final Player OWNER;
 
-	public PlanetInfo (Player ownerIn, int numUnitsIn, int xIn, int yIn, int radiusIn, int production)
+	public PlanetInfo (Player ownerIn, int numUnitsIn, int xIn, int yIn, int radiusIn, int production, int moraleIn)
 	{
 		OWNER = ownerIn;
 		NUM_UNITS = numUnitsIn;
@@ -190,6 +249,7 @@ class PlanetInfo
 		Y = yIn;
 		RADIUS = radiusIn;
 		PRODUCTION_TIME = production;
+		MORALE = moraleIn;
 	}
 
 	//Getters
@@ -200,6 +260,10 @@ class PlanetInfo
 	public int getNumUnits()
 	{
 		return NUM_UNITS;
+	}
+	public int getMorale()
+	{
+		return MORALE;
 	}
 	public int getX()
 	{
@@ -217,9 +281,15 @@ class PlanetInfo
 	{
 		return PRODUCTION_TIME;
 	}
+	//Units per tick, scaled by morale like the production in Planet.update (full morale: 1 / PRODUCTION_TIME)
+	//Neutral planets do not produce in this version, so their rate is 0
 	public double getProductionRate()
 	{
-		return 1.0/PRODUCTION_TIME;
+		if (OWNER == null)
+		{
+			return 0.0;
+		}
+		return MORALE / (double) MoraleModel.MAX_MORALE / PRODUCTION_TIME;
 	}
 
 	//Test to see if this PlanetInfo is the same as some other PlanetInfo

@@ -33,12 +33,16 @@ public abstract class Player extends Thread
 			makeMove();
 		}
 	}
+	//Read helpers: they iterate the shared sets, so they run under the same locks as the game (planets before fleets)
 	public Set<PlanetInfo> getAllPlanetInfo()
 	{
 		Set<PlanetInfo> info = new HashSet<PlanetInfo>();
-		for (Planet p: currentGame.getAllPlanets())
+		synchronized (currentGame.getAllPlanets())
 		{
-			info.add(p.getPlanetInfo());
+			for (Planet p: currentGame.getAllPlanets())
+			{
+				info.add(p.getPlanetInfo());
+			}
 		}
 		return info;
 	}
@@ -46,9 +50,12 @@ public abstract class Player extends Thread
 	public Set<FleetInfo> getAllFleetInfo()
 	{
 		Set<FleetInfo> info = new HashSet<FleetInfo>();
-		for(Fleet f: currentGame.getAllFleets())
+		synchronized (currentGame.getAllFleets())
 		{
-			info.add(f.getFleetInfo());
+			for(Fleet f: currentGame.getAllFleets())
+			{
+				info.add(f.getFleetInfo());
+			}
 		}
 		return info;
 	}
@@ -56,11 +63,14 @@ public abstract class Player extends Thread
 	public Set<PlanetInfo> getEnemyPlanetInfo()
 	{
 		Set<PlanetInfo> enemyInfo = new HashSet<PlanetInfo>();
-		for (Planet p: currentGame.getAllPlanets())
+		synchronized (currentGame.getAllPlanets())
 		{
-			if (p.getOwner() != null && p.getOwner() != this)
+			for (Planet p: currentGame.getAllPlanets())
 			{
-				enemyInfo.add(p.getPlanetInfo());
+				if (p.getOwner() != null && p.getOwner() != this)
+				{
+					enemyInfo.add(p.getPlanetInfo());
+				}
 			}
 		}
 		return enemyInfo;
@@ -69,11 +79,14 @@ public abstract class Player extends Thread
 	public Set<FleetInfo> getEnemyFleetInfo()
 	{
 		Set<FleetInfo> enemyFleets = new HashSet<FleetInfo>();
-		for(Fleet f: currentGame.getAllFleets())
+		synchronized (currentGame.getAllFleets())
 		{
-			if (f.getOwner() != this)
+			for(Fleet f: currentGame.getAllFleets())
 			{
-				enemyFleets.add(f.getFleetInfo());
+				if (f.getOwner() != this)
+				{
+					enemyFleets.add(f.getFleetInfo());
+				}
 			}
 		}
 		return enemyFleets;
@@ -82,11 +95,14 @@ public abstract class Player extends Thread
 	public Set<PlanetInfo> getMyPlanetInfo()
 	{
 		Set<PlanetInfo> myInfo = new HashSet<PlanetInfo>();
-		for (Planet p: currentGame.getAllPlanets())
+		synchronized (currentGame.getAllPlanets())
 		{
-			if (p.getOwner() == this)
+			for (Planet p: currentGame.getAllPlanets())
 			{
-				myInfo.add(p.getPlanetInfo());
+				if (p.getOwner() == this)
+				{
+					myInfo.add(p.getPlanetInfo());
+				}
 			}
 		}
 		return myInfo;
@@ -95,11 +111,14 @@ public abstract class Player extends Thread
 	public Set<FleetInfo> getMyFleetInfo()
 	{
 		Set<FleetInfo> myFleets = new HashSet<FleetInfo>();
-		for(Fleet f: currentGame.getAllFleets())
+		synchronized (currentGame.getAllFleets())
 		{
-			if (f.getOwner() == this)
+			for(Fleet f: currentGame.getAllFleets())
 			{
-				myFleets.add(f.getFleetInfo());
+				if (f.getOwner() == this)
+				{
+					myFleets.add(f.getFleetInfo());
+				}
 			}
 		}
 		return myFleets;
@@ -108,11 +127,14 @@ public abstract class Player extends Thread
 	public Set<PlanetInfo> getNeutralPlanetInfo()
 	{
 		Set<PlanetInfo> myInfo = new HashSet<PlanetInfo>();
-		for (Planet p: currentGame.getAllPlanets())
+		synchronized (currentGame.getAllPlanets())
 		{
-			if (p.getOwner() == null)
+			for (Planet p: currentGame.getAllPlanets())
 			{
-				myInfo.add(p.getPlanetInfo());
+				if (p.getOwner() == null)
+				{
+					myInfo.add(p.getPlanetInfo());
+				}
 			}
 		}
 		return myInfo;
@@ -121,14 +143,17 @@ public abstract class Player extends Thread
 	//Convenience functions to send fleets or change fleet target based on info
 	public void sendFleet(PlanetInfo originInfo, int numUnits, PlanetInfo targetInfo)
 	{
-		Planet origin = getPlanetFromInfo(originInfo);
-		Planet target = getPlanetFromInfo(targetInfo);
-		if (origin != null && target != null)
+		synchronized (currentGame.getAllPlanets())
 		{
-			if (origin.getOwner() == this)
+			Planet origin = getPlanetFromInfo(originInfo);
+			Planet target = getPlanetFromInfo(targetInfo);
+			if (origin != null && target != null)
 			{
-//				System.out.println("Sending fleet from " + origin + " to " + target);
-				origin.sendFleet(numUnits, target);
+				if (origin.getOwner() == this)
+				{
+//					System.out.println("Sending fleet from " + origin + " to " + target);
+					origin.sendFleet(numUnits, target);
+				}
 			}
 		}
 	}
@@ -137,11 +162,17 @@ public abstract class Player extends Thread
 	{
 		if (fi.getOwner() == this)
 		{
-			Fleet f = getFleetFromInfo(fi);
-			Planet p = getPlanetFromInfo(targetInfo);
-			if (f != null && p != null)
+			synchronized (currentGame.getAllPlanets())
 			{
-				f.setDestination(p);
+				synchronized (currentGame.getAllFleets())
+				{
+					Fleet f = getFleetFromInfo(fi);
+					Planet p = getPlanetFromInfo(targetInfo);
+					if (f != null && p != null)
+					{
+						f.setDestination(p);
+					}
+				}
 			}
 		}
 	}

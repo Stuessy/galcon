@@ -35,11 +35,13 @@ Players start with 1 large "home planet" and send off ships to conquer other pla
 ### PlanetInfo Class
 * Player getOwner()
 * int getNumUnits()
+* int getMorale() <- morale of the planet, 0 to 100. Planets with low morale produce less (100 = full production)
 * int getX()
 * int getY()
 * int getRadius()
-* int getProductionTime() <- number of ticks you have to wait to produce 1 unit
-* double getProductionRate() <- units per tick
+* int getProductionTime() <- number of ticks you have to wait to produce 1 unit at full morale (100)
+* double getProductionRate() <- units per tick, scaled by morale (full morale: 1 / getProductionTime()), 0 for neutral planets
+
 * boolean equals(PlanetInfo p)
 
 ### FleetInfo Class

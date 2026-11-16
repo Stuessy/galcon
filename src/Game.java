@@ -81,6 +81,14 @@ public class Game extends JFrame implements ActionListener
 		parent.clear(g);
 		drawAllPlanets(g);
 		drawAllFleets(g);
+		if (p1 != null)
+		{
+			p1.drawOverlay(g); //Drawn into the offscreen buffer to avoid flickering
+		}
+		if (p2 != null)
+		{
+			p2.drawOverlay(g);
+		}
 		parent.repaint(); //Clear the screen
 		//		drawCurrentPlayerInfo(g);
 	}
@@ -177,6 +185,7 @@ public class Game extends JFrame implements ActionListener
 			{
 				planets.add(new Planet(this));
 			}
+			PlanetNeighbours.assign(planets); //Once per game, the planet positions do not change
 		}
 	}
 	public void addFleet(Fleet f)
@@ -203,18 +212,21 @@ public class Game extends JFrame implements ActionListener
 	public void updateAllFleets()
 	{
 		Set<Fleet> toBeRemoved = new HashSet<Fleet>();
-		synchronized(fleets)
+		synchronized(planets) //Lock order is always planets before fleets, invading changes planets
 		{
-			for(Fleet f: fleets)
+			synchronized(fleets)
 			{
-				if (f.update()) //Did we hit the planet?
+				for(Fleet f: fleets)
 				{
-					toBeRemoved.add(f); //Mark it for removal
+					if (f.update()) //Did we hit the planet?
+					{
+						toBeRemoved.add(f); //Mark it for removal
+					}
 				}
-			}
-			for (Fleet f: toBeRemoved) //Remove marked fleets
-			{
-				fleets.remove(f);
+				for (Fleet f: toBeRemoved) //Remove marked fleets
+				{
+					fleets.remove(f);
+				}
 			}
 		}
 	}
@@ -222,9 +234,13 @@ public class Game extends JFrame implements ActionListener
 	{
 		synchronized(planets)
 		{
+			synchronized(fleets)
+			{
+				MoraleModel.prepare(planets, fleets); //First all target values, from the same state
+			}
 			for(Planet p: planets)
 			{
-				p.update();
+				p.update(); //Then move the morale and produce
 			}
 		}
 	}

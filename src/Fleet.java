@@ -53,6 +53,18 @@ public class Fleet
 		return owner;
 	}
 
+	//The planet the fleet is headed to (read by MoraleModel)
+	Planet getTarget()
+	{
+		return target;
+	}
+
+	//Ships still alive in this fleet, including those that have not left their planet yet (read by MoraleModel)
+	int getNumUnits()
+	{
+		return numUnits;
+	}
+
 	//Moves all launched ships towards the target planet, each ship invades one unit on its own arrival
 	//Returns true if the fleet has no ships left
 	public boolean update()
