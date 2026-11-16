@@ -29,7 +29,7 @@ public class Tournament extends JFrame
 	//Double buffering
 	private static Image bufferedImage = null;
 	private static Graphics bufferedGraphics = null;
-	private static final Image STAR_BACKGROUND = new ImageIcon("SpacePic.jpg").getImage();
+	static final Image STAR_BACKGROUND = new ImageIcon("SpacePic.jpg").getImage();
 	
 	private final static Player[] AIs = {new SamplePlayer(), new SamplePlayer()};
 	private final static int NUM_GAMES = 2; //The number of games in this tournament
@@ -69,6 +69,7 @@ public class Tournament extends JFrame
 		
 		//Set up window
 		setName("Galcon AI Challenge");
+		setTitle("Galcon");
 		setSize(WIN_WIDTH, WIN_HEIGHT + TOP_BAR_HEIGHT);
 		setDefaultCloseOperation(EXIT_ON_CLOSE);
 		setBackground(Color.GRAY);
@@ -104,10 +105,7 @@ public class Tournament extends JFrame
 	}
 	public void clear(Graphics g)
 	{
-		g.clearRect(0, 0, WIN_WIDTH, WIN_HEIGHT);
-		g.setColor(Color.WHITE);
-//		g.drawImage(STAR_BACKGROUND, 0, TOP_BAR_HEIGHT, WIN_WIDTH, WIN_HEIGHT, this);
-		g.fillRect(0, 0, WIN_WIDTH, WIN_HEIGHT);
+		g.drawImage(STAR_BACKGROUND, 0, 0, WIN_WIDTH, WIN_HEIGHT, this);
 	}
 	//Number of games the player has won so far, based on the recorded winners
 	private int getNumWins(Player player)
@@ -150,7 +148,7 @@ public class Tournament extends JFrame
 	{
 		clear(g);
 		g.setFont(RANKING_FONT);
-		g.setColor(Color.BLACK);
+		g.setColor(Color.WHITE);
 		g.drawString(getResultMessage(), 40, 100);
 		g.drawString(player1.getPlayerName() + ": " + getNumWins(player1) + " won", 40, 200);
 		g.drawString(player2.getPlayerName() + ": " + getNumWins(player2) + " won", 40, 250);

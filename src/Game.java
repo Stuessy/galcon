@@ -97,6 +97,15 @@ public class Game extends JFrame implements ActionListener
 	//		g.drawString(p2.getPlayerName(), Tournament.WIN_WIDTH / 2, Tournament.TOP_BAR_HEIGHT + FONT_HEIGHT);
 	//	}
 
+	//Text color for the unit count of a planet, or null to hide it.
+	//A human player does not see the unit count of enemy planets. Without a human player (AI vs AI) everything is shown.
+	private Color textColorFor(Planet p, Color planetColor)
+	{
+		Player viewer = (p1 instanceof HumanPlayer) ? p1 : (p2 instanceof HumanPlayer) ? p2 : null;
+		boolean enemy = (viewer != null) && (p.getOwner() != null) && (p.getOwner() != viewer);
+		return enemy ? null : invertColor(planetColor);
+	}
+
 	//Draw all planets
 	public void drawAllPlanets(Graphics g)
 	{
@@ -108,13 +117,13 @@ public class Game extends JFrame implements ActionListener
 			for(Planet p: planets)
 			{
 				if (p1.equals(p.getOwner()))
-					p.draw(g, null, invertColor(p1.getColor()));
+					p.draw(g, null, textColorFor(p, p1.getColor()));
 			}
 			g.setColor(p2.getColor());
 			for(Planet p: planets)
 			{
 				if (p2.equals(p.getOwner()))
-					p.draw(g, null, invertColor(p2.getColor()));
+					p.draw(g, null, textColorFor(p, p2.getColor()));
 			}
 			g.setColor(Color.LIGHT_GRAY);
 			for(Planet p: planets)
@@ -132,7 +141,7 @@ public class Game extends JFrame implements ActionListener
 			for(Fleet f: fleets)
 			{
 				Color c = Tournament.getPlayerColor(f.getOwner());
-				f.draw(g, c, invertColor(c));
+				f.draw(g, c);
 			}
 		}
 	}

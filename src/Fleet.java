@@ -73,13 +73,13 @@ public class Fleet
 	}
 
 	//Draws every launched ship as a tiny triangle in the fleet's color
-	public void draw(Graphics g, Color planetColor, Color textColor)
+	public void draw(Graphics g, Color color)
 	{
 		for (Ship s: ships)
 		{
 			if (isLaunched(s))
 			{
-				drawShip(g, s, planetColor, textColor);
+				drawShip(g, s, color);
 			}
 		}
 	}
@@ -119,7 +119,7 @@ public class Fleet
 	}
 
 	//Draws one ship as a triangle pointing towards the target, shifted sideways onto its lane
-	private void drawShip(Graphics g, Ship s, Color fill, Color outline)
+	private void drawShip(Graphics g, Ship s, Color color)
 	{
 		double dx = target.X - s.x;
 		double dy = target.Y - s.y;
@@ -142,10 +142,8 @@ public class Fleet
 			(int) Math.round(cy + dy * half),
 			(int) Math.round(cy - dy * half + dx * wide),
 			(int) Math.round(cy - dy * half - dx * wide) };
-		g.setColor(fill);
+		g.setColor(color);
 		g.fillPolygon(xs, ys, 3);
-		g.setColor(outline);
-		g.drawPolygon(xs, ys, 3);
 	}
 
 	//One ship of the swarm, flying on its own lane
