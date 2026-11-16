@@ -6,7 +6,6 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
-import javax.swing.ImageIcon;
 
 public class Planet 
 {
@@ -16,7 +15,7 @@ public class Planet
 	public static final int MIN_PRODUCE_TIME = 10;
 	public static final int MAX_PRODUCE_TIME = 40;
 
-	private static final Image PLANET_IMAGE = new ImageIcon("planetGray.png").getImage();
+	private static final Image PLANET_IMAGE = Assets.PLANET_GRAY;
 	public static final Font TEXT_FONT = new Font("Monospaced", Font.BOLD, (int) (0.7 * MIN_SIZE * 2));
 	
 	public final int X, Y, RADIUS, PRODUCTION_TIME;

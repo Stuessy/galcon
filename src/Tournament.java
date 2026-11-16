@@ -5,7 +5,6 @@ import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Toolkit;
 
-import javax.swing.ImageIcon;
 import javax.swing.JFrame;
 
 /**
@@ -29,7 +28,6 @@ public class Tournament extends JFrame
 	//Double buffering
 	private static Image bufferedImage = null;
 	private static Graphics bufferedGraphics = null;
-	static final Image STAR_BACKGROUND = new ImageIcon("SpacePic.jpg").getImage();
 	
 	private final static Player[] AIs = {new SamplePlayer(), new SamplePlayer()};
 	private final static int NUM_GAMES = 2; //The number of games in this tournament
@@ -105,7 +103,7 @@ public class Tournament extends JFrame
 	}
 	public void clear(Graphics g)
 	{
-		g.drawImage(STAR_BACKGROUND, 0, 0, WIN_WIDTH, WIN_HEIGHT, this);
+		g.drawImage(Assets.STAR_BACKGROUND, 0, 0, WIN_WIDTH, WIN_HEIGHT, this);
 	}
 	//Number of games the player has won so far, based on the recorded winners
 	private int getNumWins(Player player)

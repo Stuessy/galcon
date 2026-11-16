@@ -91,7 +91,7 @@ public class StartScreen extends JFrame
 		protected void paintComponent(Graphics g)
 		{
 			super.paintComponent(g);
-			g.drawImage(Tournament.STAR_BACKGROUND, 0, 0, getWidth(), getHeight(), this);
+			g.drawImage(Assets.STAR_BACKGROUND, 0, 0, getWidth(), getHeight(), this);
 			g.setFont(TEXT_FONT);
 			FontMetrics fm = g.getFontMetrics();
 			g.setColor(Color.WHITE);

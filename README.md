@@ -2,8 +2,8 @@
 
 ## Installation:
 1. Create a Project in Eclipse called `Galcon`
-2. Drag all of the `.jpg` images from the `Galcon/Images/` folder into the main folder of the `Galcon` project in Eclipse.
-3. Drag all of the `.java` files from the `Galcon/Code/` folder into the `Galcon/src/` folder in Eclipse.
+2. Keep the image files in `assets/images/` and the editable source artwork in `assets/source/`.
+3. Keep the `.java` files in the `src/` folder of the `Galcon` project in Eclipse.
 
 ### How to Start:
 Just select the MainClass class and press run. You should see many planets on the screen with numbers on each of them. There should, at the start, be two planets of random color sending out small circles with numbers in them. The small circles flying around are called 'fleets,' which are comprised of ships.
