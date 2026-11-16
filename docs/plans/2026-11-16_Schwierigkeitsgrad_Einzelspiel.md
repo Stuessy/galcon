@@ -103,9 +103,9 @@ Crazy übernimmt den Legacy-Takt von 0,5 s (16 Frames bei 32 FPS) als Bereich 40
 - Änderungen an den KI-Entscheidungsregeln, an der Moral-Logik, an der Schiffsgeschwindigkeit je Stufe und am Schiffsanteil der KI.
 - Startpositionen: Die Heimatplaneten bleiben zufällig (Legacy: feste linke und rechte Kante, siehe F3).
 - Speicherung der Stufe in einer Datei. Die Auswahl gilt nur für die laufende Sitzung (siehe F1).
-- Anzeige der Schiffszahl fremder Planeten. Sie bleibt verborgen.
+- Anzeige der Schiffszahl fremder Planeten. Sie bleibt nur in Normal, Hard und Crazy verborgen. Easy zeigt sie an (Nachtrag, Abschnitt 11).
 - Getrennte Statistik je Stufe (O7).
-- Änderungen an `SamplePlayer`, `HumanPlayer`, der Logik von `EnemyAI` und an `README.md`. Die öffentliche `Player`-API bleibt unverändert.
+- Änderungen an `SamplePlayer`, `HumanPlayer` und der Logik von `EnemyAI`. Die öffentliche `Player`-API bleibt unverändert. `README.md` nur für den Nachtrag (Abschnitt 11).
 - Balancing-Feintuning über die Werte in 2.2 und 2.3 hinaus. Korrekturen erst nach Playtest (F2).
 
 ---
@@ -114,7 +114,7 @@ Crazy übernimmt den Legacy-Takt von 0,5 s (16 Frames bei 32 FPS) als Bereich 40
 
 | Komponente | Datei / Pfad | Verantwortung / Art der Änderung |
 |---|---|---|
-| Difficulty | `src/Difficulty.java` | **Neu.** Enum mit Anzeigename, Anzahl KI-Planeten, Pausen (min/max), `getNeutralPlanets(total)` und Standardwert `DEFAULT` |
+| Difficulty | `src/Difficulty.java` | **Neu.** Enum mit Anzeigename, Anzahl KI-Planeten, Pausen (min/max), `getNeutralPlanets(total)`, Standardwert `DEFAULT` und Flag für die Anzeige der Schiffszahl fremder Planeten (nur Easy, Nachtrag) |
 | Planet | `src/Planet.java` | **Ändern.** Neuer Konstruktor `Planet(Game, Player, int)` für Planeten mit Besitzer und zufälligem Radius. `Planet(Game)` delegiert dorthin |
 | Game | `src/Game.java` | **Ändern.** Feld `difficulty` aus `parent`, `generateNewMap` richtet sich nach der Stufe |
 | Tournament | `src/Tournament.java` | **Ändern.** Neuer Konstruktor mit `Difficulty`, Getter `getDifficulty()`, alter Konstruktor delegiert mit `Difficulty.DEFAULT`, Zeile im Endscreen (O6) |
@@ -343,7 +343,7 @@ while (true)
 - [x] `src/SinglePlayer.java`: **Ändern** (Stufe über Restarts, `EnemyAI` mit Pausen der Stufe)
 - [x] `src/EnemyAI.java`: Unverändert (Pausen kommen über den bestehenden Konstruktor)
 - [x] `src/HumanPlayer.java`, `src/MoraleModel.java`, `src/PlanetNeighbours.java`, `src/SamplePlayer.java`: Unverändert
-- [x] `README.md`: Unverändert (öffentliche `Player`-API bleibt)
+- [x] `README.md`: **Geändert** (nur Nachtrag, Abschnitt 11). Öffentliche `Player`-API bleibt unverändert
 - [x] `legacy/`: Unverändert
 - Keine Ressourcen-, Bild- oder Konfigurationsänderungen nötig.
 
@@ -359,7 +359,7 @@ while (true)
 
 ## 8. Manuelle Teststrategie & Abnahmekriterien
 
-Im Projekt gibt es keine automatisierten Tests. Die Prüfung erfolgt manuell in Eclipse über `SinglePlayer.main`. Die Zusatz-KI-Planeten sind in der KI-Farbe sichtbar. Die Schiffszahl fremder Planeten ist für den Menschen verborgen. Für TF-8 und TF-17 werden die Werte deshalb über eine temporäre `System.out`-Ausgabe oder einen Debugger geprüft. Die Ausgabe wird danach entfernt.
+Im Projekt gibt es keine automatisierten Tests. Die Prüfung erfolgt manuell in Eclipse über `SinglePlayer.main`. Die Zusatz-KI-Planeten sind in der KI-Farbe sichtbar. Die Schiffszahl fremder Planeten ist für den Menschen in Normal, Hard und Crazy verborgen. In Easy ist sie sichtbar. Für TF-8 und TF-17 werden die Werte deshalb über eine temporäre `System.out`-Ausgabe oder einen Debugger geprüft. Die Ausgabe wird danach entfernt.
 
 | Nr. | Testfall | Vorbedingung / Schritte | Erwartetes Ergebnis |
 |---|---|---|---|
@@ -422,5 +422,7 @@ Im Projekt gibt es keine automatisierten Tests. Die Prüfung erfolgt manuell in 
 - Neu: `src/Difficulty.java` (Enum EASY, NORMAL, HARD, CRAZY mit `DEFAULT`, Pausen, `getNeutralPlanets`).
 - Geändert: `src/Planet.java` (Konstruktor `Planet(Game, Player, int)`, `Planet(Game)` delegiert), `src/Game.java` (Feld `difficulty`, `generateNewMap` nach Stufe), `src/Tournament.java` (6-Parameter-Konstruktor, Getter, Zeile „Difficulty: …“ im Endscreen), `src/StartScreen.java` (Stufen-Schaltflächen per Maus, `getDifficulty()`, Konstruktor mit Startwert), `src/SinglePlayer.java` (Stufe über Restarts, Pausen der Stufe an `EnemyAI`, Stufe an `Tournament`).
 - Unverändert: `EnemyAI`, `MoraleModel`, `PlanetNeighbours`, `SamplePlayer`, `HumanPlayer`, `Player`.
+- Nachtrag (Easy zeigt die Schiffszahl fremder Planeten): `Difficulty.isEnemyUnitsVisible()` mit Flag nur bei `EASY`, geprüft in `Game.textColorFor`. In Normal, Hard und Crazy bleibt die Zahl verborgen. `README.md` angepasst (Abschnitt „Game Concepts“).
+- Validierung Nachtrag: `get_errors` ohne Befund auf `src/Difficulty.java` und `src/Game.java`. Manuelle Prüfung in Easy steht aus.
 - Hinweis: Die Zeile „Difficulty: …“ erscheint auch im Endscreen von `Tournament.main` (dort immer Normal).
 - Validierung: `get_errors` ohne Befund auf allen sechs Dateien. `javac` (Java 25) über alle Dateien in `src` ohne Fehler. Die Startkarte je Stufe ist per Zählung aus Tabelle 2.2 geprüft (jeweils 16 Planeten). Manuelle Tests TF-1 bis TF-19 stehen noch aus.

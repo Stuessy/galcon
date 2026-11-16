@@ -41,7 +41,7 @@ Players start with 1 large "home planet" and send off ships to conquer other pla
 * **Hover over one of your planets** to see its stats: production (ships per second) / morale / ships.
 
 ## Game Concepts
-* **Ships:** The number on a planet is its number of ships. In single player, the ship count of enemy planets is hidden.
+* **Ships:** The number on a planet is its number of ships. In single player, the ship count of enemy planets is hidden, except on Easy.
 * **Fleets:** Ships sent from a planet leave it at once and form a fleet that flies to the target. Each arriving ship adds one ship to an own planet or removes one ship from any other planet. A planet without ships is taken by the next arriving ship.
 * **Production:** Owned planets produce ships over time. Bigger planets produce faster: at full morale, from about 2.5 ships per second (smallest) to 10 ships per second (biggest). Neutral planets produce nothing.
 * **Morale (0-100):** Morale is a multiplier for production: at 100 a planet produces at full speed, at 50 at half speed. It moves towards a target value, which is the share of the planet owner's ships among all ships on the planet, on its neighboring planets, and in fleets heading to it. Morale falls quickly (about 16 points per second) and recovers slowly (about 4 points per second). Starting home planets begin at 100, all other planets at 50.

@@ -108,12 +108,14 @@ public class Game extends JFrame implements ActionListener
 	//	}
 
 	//Text color for the unit count of a planet, or null to hide it.
-	//A human player does not see the unit count of enemy planets. Without a human player (AI vs AI) everything is shown.
+	//A human player does not see the unit count of enemy planets, except on Easy (see Difficulty).
+	//Without a human player (AI vs AI) everything is shown.
 	private Color textColorFor(Planet p, Color planetColor)
 	{
 		Player viewer = (p1 instanceof HumanPlayer) ? p1 : (p2 instanceof HumanPlayer) ? p2 : null;
 		boolean enemy = (viewer != null) && (p.getOwner() != null) && (p.getOwner() != viewer);
-		return enemy ? null : invertColor(planetColor);
+		boolean hidden = enemy && !difficulty.isEnemyUnitsVisible();
+		return hidden ? null : invertColor(planetColor);
 	}
 
 	//Draw all planets
