@@ -1,3 +1,4 @@
+package src;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -12,7 +13,7 @@ public class Game extends JFrame implements ActionListener
 
 	private Player p1 = null;
 	private Player p2 = null;
-	private Player winner = null;
+	private volatile Player winner = null; //Set on the event dispatch thread, read by play()
 
 	private Set<Fleet> fleets = null;
 	private Set<Planet> planets = null;
@@ -48,7 +49,17 @@ public class Game extends JFrame implements ActionListener
 		{
 			p2.start();
 		}
-		while (winner == null){}
+		while (winner == null) //Wait until the game is over
+		{
+			try
+			{
+				Thread.sleep(FRAME_TIME);
+			}
+			catch (InterruptedException e)
+			{
+				e.printStackTrace();
+			}
+		}
 		return winner;
 	}
 
@@ -56,12 +67,12 @@ public class Game extends JFrame implements ActionListener
 	{
 		updateAllFleets();
 		updateAllPlanets();
-		winner = getWinner(); //Is there a winner now?
+		draw(parent.getBufferedGraphics());
+		winner = getWinner(); //Is there a winner now? Set after drawing, so play() returns with a complete frame
 		if (winner != null)
 		{
 			clock.stop();
 		}
-		draw(parent.getBufferedGraphics());
 	}
 	public void draw(Graphics g)
 	{
@@ -70,10 +81,6 @@ public class Game extends JFrame implements ActionListener
 		drawAllFleets(g);
 		parent.repaint(); //Clear the screen
 		//		drawCurrentPlayerInfo(g);
-		//		if (Tournament.isCompleted())
-		//		{
-		//			drawRankings(g);
-		//		}
 	}
 
 
@@ -81,11 +88,11 @@ public class Game extends JFrame implements ActionListener
 	//	{
 	//		final int FONT_HEIGHT = 40;
 	//		Font font = new Font("Monospaced", Font.PLAIN, FONT_HEIGHT);
-	//		g.setFont (font);    
+	//		g.setFont(font);    
 	//		g.setColor(p1.getColor());
-	//		g.drawString(p1.getPlayerName(), 10, TOP_BAR_HEIGHT + FONT_HEIGHT);
+	//		g.drawString(p1.getPlayerName(), 10, Tournament.TOP_BAR_HEIGHT + FONT_HEIGHT);
 	//		g.setColor(p2.getColor());
-	//		g.drawString(p2.getPlayerName(), WIN_WIDTH/2, TOP_BAR_HEIGHT + FONT_HEIGHT);
+	//		g.drawString(p2.getPlayerName(), Tournament.WIN_WIDTH / 2, Tournament.TOP_BAR_HEIGHT + FONT_HEIGHT);
 	//	}
 
 	//Draw all planets
@@ -98,23 +105,20 @@ public class Game extends JFrame implements ActionListener
 			g.setColor(p1.getColor());
 			for(Planet p: planets)
 			{
-//				Color c = Tournament.getPlayerColor(p.getOwner());
 				if (p1.equals(p.getOwner()))
-					p.draw(g, null, null);//invertColor(c));
+					p.draw(g, null, invertColor(p1.getColor()));
 			}
 			g.setColor(p2.getColor());
 			for(Planet p: planets)
 			{
-//				Color c = Tournament.getPlayerColor(p.getOwner());
 				if (p2.equals(p.getOwner()))
-					p.draw(g, null, null);//invertColor(c));
+					p.draw(g, null, invertColor(p2.getColor()));
 			}
 			g.setColor(Color.LIGHT_GRAY);
 			for(Planet p: planets)
 			{
-//				Color c = Tournament.getPlayerColor(p.getOwner());
 				if (p.getOwner() == null)
-					p.draw(g, null, null);//invertColor(c));
+					p.draw(g, null, invertColor(Color.LIGHT_GRAY));
 			}
 		}
 	}
@@ -232,10 +236,33 @@ public class Game extends JFrame implements ActionListener
 	{
 		return new Color(255 - c.getRed(), 255 - c.getGreen(), 255 - c.getBlue());
 	}
-	//Returns the winning player, or null if there is not one. You lose if you have no planets left.
-	public static Player getWinner()
+	//Returns the winning player, or null if the game is not over. You lose if you have no planets left.
+	public Player getWinner()
 	{
-//		TODO
+		boolean p1HasPlanets = false;
+		boolean p2HasPlanets = false;
+		synchronized(planets)
+		{
+			for (Planet p: planets)
+			{
+				if (p1.equals(p.getOwner()))
+				{
+					p1HasPlanets = true;
+				}
+				if (p2.equals(p.getOwner()))
+				{
+					p2HasPlanets = true;
+				}
+			}
+		}
+		if (p1HasPlanets && !p2HasPlanets)
+		{
+			return p1;
+		}
+		if (p2HasPlanets && !p1HasPlanets)
+		{
+			return p2;
+		}
 		return null;
 	}
 }

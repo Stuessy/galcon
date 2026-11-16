@@ -1,3 +1,4 @@
+package src;
 import java.awt.Color;
 import java.util.Set;
 
@@ -7,8 +8,24 @@ public class SamplePlayer extends Player
 	 * DEFINE THESE FOR YOUR AI
 	 */
 	final String NAME = "Sample Player";
-	final Color COLOR = new Color((int)(Math.random() * 255), (int)(Math.random() * 225), (int)(Math.random() * 225));
+	final Color COLOR; //Random by default, see the constructors
 	//End definitions
+	private final int minPause; //Pause before each move in ms, randomized between min and max like a human reaction
+	private final int maxPause;
+
+	public SamplePlayer()
+	{
+		//Random color and fast moves, as used in the AI tournament
+		this(new Color((int)(Math.random() * 255), (int)(Math.random() * 225), (int)(Math.random() * 225)), 100, 100);
+	}
+	//The color is given by the caller; the AI waits a random time between minPause and maxPause ms before each move
+	public SamplePlayer(Color color, int minPause, int maxPause)
+	{
+		COLOR = color;
+		this.minPause = minPause;
+		this.maxPause = maxPause;
+	}
+
 	
 	public Color getColor() 
 	{
@@ -28,7 +45,7 @@ public class SamplePlayer extends Player
 	public void makeMove() 
 	{
 		try {
-			sleep(100); //Stall
+			sleep(minPause + (int) (Math.random() * (maxPause - minPause + 1))); //Stall
 		} catch (InterruptedException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

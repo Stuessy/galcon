@@ -1,7 +1,9 @@
 //3/13/14
+package src;
 
 import java.awt.Color;
 import java.awt.Font;
+import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Image;
 import javax.swing.ImageIcon;
@@ -89,8 +91,16 @@ public class Planet
 //				bodyColor.getBlue(),
 //				Math.min(50 + numUnits, 255)));
 		g.fillOval(X - RADIUS, Y - RADIUS, RADIUS * 2, RADIUS * 2);
-//		g.setColor(textColor);
-//		g.drawString("" + numUnits, (int)(X - 0.7 * MIN_SIZE), (int)(Y + 0.7 * MIN_SIZE));
+		if (textColor != null) //Number of units, centered in the planet
+		{
+			Color bodyPaint = g.getColor(); //The next planets are drawn with the same color, so restore it
+			g.setFont(TEXT_FONT);
+			FontMetrics fm = g.getFontMetrics();
+			String units = String.valueOf(numUnits);
+			g.setColor(textColor);
+			g.drawString(units, X - fm.stringWidth(units) / 2, Y + (fm.getAscent() - fm.getDescent()) / 2);
+			g.setColor(bodyPaint);
+		}
 	}
 
 	public void update()

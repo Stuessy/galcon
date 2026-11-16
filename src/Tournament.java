@@ -1,4 +1,6 @@
+package src;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Image;
 import java.awt.Toolkit;
@@ -21,8 +23,8 @@ public class Tournament extends JFrame
 {
 	//Graphical Setup
 	public static final int TOP_BAR_HEIGHT = 22;
-	public static final int WIN_WIDTH = 800;//Toolkit.getDefaultToolkit().getScreenSize().width;
-	public static final int WIN_HEIGHT = 400;//Toolkit.getDefaultToolkit().getScreenSize().height - TOP_BAR_HEIGHT;
+	public static final int WIN_WIDTH = 960;//Toolkit.getDefaultToolkit().getScreenSize().width;
+	public static final int WIN_HEIGHT = 540;//Toolkit.getDefaultToolkit().getScreenSize().height - TOP_BAR_HEIGHT;
 	
 	//Double buffering
 	private static Image bufferedImage = null;
@@ -31,10 +33,13 @@ public class Tournament extends JFrame
 	
 	private final static Player[] AIs = {new SamplePlayer(), new SamplePlayer()};
 	private final static int NUM_GAMES = 2; //The number of games in this tournament
+	private static final Font RANKING_FONT = new Font("Monospaced", Font.BOLD, 32);
 	
 	private Player[] winners; //An array holding the list of winners
 	private Game currentGame;
 	private boolean completed;
+	private Player player1; //The players of this tournament, needed for the window hooks
+	private Player player2;
 	
 	public static void main(String args[])
 	{
@@ -47,6 +52,14 @@ public class Tournament extends JFrame
 	}
 	public Tournament(Player player1, Player player2)
 	{
+		this(player1, player2, NUM_GAMES);
+	}
+	//Plays numGames games between the two players in one window
+	public Tournament(Player player1, Player player2, int numGames)
+	{
+		this.player1 = player1;
+		this.player2 = player2;
+		
 		//Set up window
 		setName("Galcon AI Challenge");
 		setSize(WIN_WIDTH, WIN_HEIGHT + TOP_BAR_HEIGHT);
@@ -58,20 +71,29 @@ public class Tournament extends JFrame
 		bufferedImage = createImage(WIN_WIDTH, WIN_HEIGHT);
 		bufferedGraphics = bufferedImage.getGraphics();
 		
-		winners = new Player[NUM_GAMES];
-		for (int i = 0; i < NUM_GAMES; i++) //Play the games
+		player1.attachToWindow(this);
+		player2.attachToWindow(this);
+		
+		winners = new Player[numGames];
+		for (int i = 0; i < numGames; i++) //Play the games
 		{
 			currentGame = new Game(player1, player2, this);
 			Player.currentGame = currentGame;
-			Player winner = currentGame.play(); //Note: winner could be null
+			Player winner = currentGame.play(); //Returns when a player has lost all planets
 			winners[i] = winner;
 			System.out.println("Done with a game, winner is " + winner.getPlayerName());	
 		}
+		completed = true;
+		printRanks();
+		drawRankings(bufferedGraphics);
+		repaint();
 	}
 	public void paint(Graphics g)
 	{
 		g.translate(0, TOP_BAR_HEIGHT);
 		g.drawImage(bufferedImage, 0, 0, this);
+		player1.drawOverlay(g);
+		player2.drawOverlay(g);
 	}
 	public void clear(Graphics g)
 	{
@@ -80,44 +102,51 @@ public class Tournament extends JFrame
 //		g.drawImage(STAR_BACKGROUND, 0, TOP_BAR_HEIGHT, WIN_WIDTH, WIN_HEIGHT, this);
 		g.fillRect(0, 0, WIN_WIDTH, WIN_HEIGHT);
 	}
-//	private static void recordResult(Player winner)
-//	{
-//		if (numWins.containsKey(winner))
-//		{
-//			numWins.put(winner, numWins.get(winner) + 1); //Add 1 to the player's win count
-//			System.out.println("Win for "+ winner.getPlayerName()); //Print to stdout
-//		}
-//		else
-//		{
-//			System.out.println("Unable to find specified player in tournament.");	
-//		}
-//	}
-
-	//Print the player ranks in order
-	public void printRanks()
+	//Number of games the player has won so far, based on the recorded winners
+	private int getNumWins(Player player)
 	{
-//		for (Player p: numWins.keySet())
-//		{
-//			System.out.println(p.getPlayerName() + ": \t" + numWins.get(p));
-//		}
+		int wins = 0;
+		for (Player winner: winners)
+		{
+			if (winner == player)
+			{
+				wins++;
+			}
+		}
+		return wins;
 	}
 
+	//Text announcing the overall winner, or a draw
+	private String getResultMessage()
+	{
+		int wins1 = getNumWins(player1);
+		int wins2 = getNumWins(player2);
+		if (wins1 == wins2)
+		{
+			return "Draw!";
+		}
+		return ((wins1 > wins2) ? player1 : player2).getPlayerName() + " wins!";
+	}
+
+	//Print the ranks in order and the result of the tournament
+	public void printRanks()
+	{
+		for (Player p: new Player[] {player1, player2})
+		{
+			System.out.println(p.getPlayerName() + ": \t" + getNumWins(p));
+		}
+		System.out.println(getResultMessage());
+	}
+
+	//Show the result of the tournament in the window
 	private void drawRankings(Graphics g)
 	{
-//		final int FONT_HEIGHT = 40;
-//		Font font = new Font("Monospaced", Font.PLAIN, FONT_HEIGHT);
-//		g.setFont(font);
-//
-//		g.setColor(Color.white);
-//		int x = 400;
-//		int y = 250;
-//		g.drawString("Name\n\n\n\n\n\n\n\n\n\n\n\nWins", x, y);
-//		y += FONT_HEIGHT+5;
-//		for (Player p: numWins.keySet())
-//		{
-//			g.drawString(p.getPlayerName() + "\t\t\t\t" + numWins.get(p), x, y);
-//			y += FONT_HEIGHT + 5;
-//		}
+		clear(g);
+		g.setFont(RANKING_FONT);
+		g.setColor(Color.BLACK);
+		g.drawString(getResultMessage(), 40, 100);
+		g.drawString(player1.getPlayerName() + ": " + getNumWins(player1) + " won", 40, 200);
+		g.drawString(player2.getPlayerName() + ": " + getNumWins(player2) + " won", 40, 250);
 	}
 	public boolean isCompleted()
 	{

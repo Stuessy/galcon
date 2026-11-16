@@ -1,5 +1,8 @@
 //3/13/14
+package src;
+
 import java.awt.Color;
+import java.awt.Graphics;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Set;
@@ -14,6 +17,14 @@ public abstract class Player extends Thread
 	public abstract String getPlayerName(); //Get the AI's name
 	
 	public static Game currentGame;
+	
+	//Hooks for players that interact with the window (see HumanPlayer). AIs don't need them.
+	public void attachToWindow(Tournament window)
+	{
+	}
+	public void drawOverlay(Graphics g)
+	{
+	}
 	
 	public void run()
 	{
