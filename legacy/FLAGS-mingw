@@ -1,0 +1,18 @@
+TAB = 4
+
+PYP_EXT = pyp
+HEADER_EXT = h
+SOURCE_EXT = cc
+PY_EXT = py
+PYD_EXT = pyd
+
+CC = gcc
+CCFLAGS = -O3 -Ic:/packages/sdl-devel/include -Ic:\python23\include
+LFLAGS = -Lc:/packages/sdl-devel/lib -lSDL  -Lc:\packages\python23 -lpython23
+
+SWIG = swig
+SWIGFLAGS = 
+
+LD = gcc
+LDFLAGS = -lmsvcrt -Lc:/packages/sdl-devel/lib -lSDL -Lc:\packages\python23 -lpython23
+

@@ -1,0 +1,6 @@
+include *.txt
+include data/*
+include *.py
+include *.c
+include *.h
+include *.i
