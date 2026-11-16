@@ -61,6 +61,8 @@ public class Tournament extends JFrame
 	private Player player1; //The players of this tournament, needed for the window hooks
 	private Player player2;
 	private final double shipSpeed; //Flight speed of all ships in this tournament
+	private final Difficulty difficulty; //Map setup of every game in this tournament
+
 	
 	public static void main(String args[]) throws InterruptedException
 	{
@@ -93,12 +95,19 @@ public class Tournament extends JFrame
 	{
 		this(player1, player2, numGames, shipSpeed, new ArrayList<String>());
 	}
-	//Plays numGames games and records all winners into the given cumulative score history
+	//Plays numGames games and records all winners into the given cumulative score history, with the default difficulty
 	public Tournament(Player player1, Player player2, int numGames, double shipSpeed, List<String> scoreHistory)
+	{
+		this(player1, player2, numGames, shipSpeed, scoreHistory, Difficulty.DEFAULT);
+	}
+	//Plays numGames games with the given difficulty and records all winners into the given cumulative score history
+	public Tournament(Player player1, Player player2, int numGames, double shipSpeed, List<String> scoreHistory,
+			Difficulty difficulty)
 	{
 		this.player1 = player1;
 		this.player2 = player2;
 		this.shipSpeed = shipSpeed;
+		this.difficulty = (difficulty != null) ? difficulty : Difficulty.DEFAULT; //Set before the games start
 		this.scoreHistory = (scoreHistory != null) ? scoreHistory : new ArrayList<String>();
 		
 		//Set up window
@@ -251,6 +260,7 @@ public class Tournament extends JFrame
 		g.setFont(RANKING_FONT);
 		g.setColor(Color.WHITE);
 		g.drawString(getResultMessage(), 40, 100);
+		g.drawString("Difficulty: " + difficulty, 40, 150);
 		g.drawString(player1.getPlayerName() + ": " + getNumWins(player1) + " won", 40, 200);
 		g.drawString(player2.getPlayerName() + ": " + getNumWins(player2) + " won", 40, 250);
 		drawRestartButton(g);
@@ -275,6 +285,10 @@ public class Tournament extends JFrame
 	public double getShipSpeed()
 	{
 		return shipSpeed;
+	}
+	public Difficulty getDifficulty()
+	{
+		return difficulty;
 	}
 	public boolean isCompleted()
 	{

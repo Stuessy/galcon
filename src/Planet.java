@@ -57,12 +57,12 @@ public class Planet
 		Y = y;
 	}
 
-	//Construct a neutrally owned planet with a random starting size.
-	public Planet(Game parent)
+	//Construct a planet with a random size, owned by the given player (null = neutral) with the given ships
+	public Planet(Game parent, Player owner, int startUnits)
 	{
 		this.parent = parent;
-		owner = null;
-		numUnits = (int) (Math.random() * MAX_NEUTRAL_UNITS);
+		this.owner = owner;
+		numUnits = startUnits;
 		morale = realMorale = MoraleModel.NEUTRAL_START_MORALE;
 		RADIUS = (int) (Math.random() * (MAX_SIZE - MIN_SIZE) + MIN_SIZE);
 		PRODUCTION_TIME = (int) ((1 - ((double) RADIUS - MIN_SIZE) / (MAX_SIZE - MIN_SIZE)) * 
@@ -80,6 +80,12 @@ public class Planet
 		Y = y;
 	}
 	
+	//Construct a neutrally owned planet with a random starting size.
+	public Planet(Game parent)
+	{
+		this(parent, null, (int) (Math.random() * MAX_NEUTRAL_UNITS));
+	}
+
 	//Get this planet's information
 	public PlanetInfo getPlanetInfo()
 	{

@@ -8,12 +8,12 @@ import java.util.List;
 /*
  * Enemy AI, ported from the Legacy game (legacy/level.py, computer).
  * Each move it looks at every own planet and decides for each neighbour whether to send ships there.
- * It only sends to neighbouring planets. The morale rules themselves are in MoraleModel and Planet.
+ * It only sends to neighbouring planets. Attacks only start if the ships can take the target (R6).
+ * The morale rules themselves are in MoraleModel and Planet.
  */
 public class EnemyAI extends Player
 {
 	private static final int MIN_SHIPS_TO_SEND = 10; //Planets with fewer ships keep them
-	private static final int MIN_MORALE_TO_SEND = 25; //Planets with less morale keep their ships
 	private static final int MORALE_DIFF_FOR_REINFORCEMENT = 10; //Morale difference to an own neighbour that triggers help
 	private static final int SHIP_DIFF_FOR_REINFORCEMENT = 10; //Ship difference to an own neighbour that triggers help
 
@@ -70,13 +70,13 @@ public class EnemyAI extends Player
 			Collections.shuffle(own);
 			for (Planet origin: own)
 			{
-				decideFor(origin);
+				decideFor(game, origin);
 			}
 		}
 	}
 
 	//Decides for one own planet, neighbour by neighbour in random order. Caller holds the lock on the planets.
-	private void decideFor(Planet origin)
+	private void decideFor(Game game, Planet origin)
 	{
 		if (origin.getOwner() != this)
 		{
@@ -91,10 +91,7 @@ public class EnemyAI extends Player
 			{
 				break;
 			}
-			if (origin.getRealMorale() < MIN_MORALE_TO_SEND) //R2: morale too low
-			{
-				break;
-			}
+			//No morale gate: a demoralized planet keeps fighting (the former legacy rule R2 was removed)
 			int amount;
 			if (target.getOwner() == this)
 			{
@@ -114,11 +111,41 @@ public class EnemyAI extends Player
 			else
 			{
 				amount = origin.getNumUnits() * 3 / 4; //R6: neutral or enemy neighbour is attacked
+				if (!isStrongEnough(game, target, amount)) //R6: only attack if the ships can take the target
+				{
+					continue;
+				}
 			}
 			if (amount > 0)
 			{
 				origin.sendFleet(amount, target);
 			}
 		}
+	}
+
+	//R6 strength check: the new ships plus own ships already heading to the target must exceed its garrison.
+	//If the ships on their way are already enough, nothing more is sent. Caller holds the lock on the planets.
+	private boolean isStrongEnough(Game game, Planet target, int amount)
+	{
+		int garrison = target.getNumUnits(); //Ships on the target, the invaders have to beat them
+		int committed = shipsHeadingTo(game, target);
+		return committed <= garrison && committed + amount > garrison;
+	}
+
+	//Own ships in fleets that are on their way to the target, also those that have not left their planet yet
+	private int shipsHeadingTo(Game game, Planet target)
+	{
+		int ships = 0;
+		synchronized (game.getAllFleets()) //Lock order: planets before fleets
+		{
+			for (Fleet f: game.getAllFleets())
+			{
+				if (f.getOwner() == this && f.getTarget() == target)
+				{
+					ships += f.getNumUnits();
+				}
+			}
+		}
+		return ships;
 	}
 }

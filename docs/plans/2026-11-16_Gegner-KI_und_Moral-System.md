@@ -59,14 +59,15 @@ Ausgewertet je eigenem Planeten (`origin`) und je Nachbarziel (`target`) aus `or
 | Nr. | Bedingung (in dieser Reihenfolge) | Aktion |
 |---|---|---|
 | R1 | `origin.numUnits < 10` | Abbruch für diesen Planeten (`break`) |
-| R2 | `origin.realMorale < 25` | Abbruch für diesen Planeten (`break`) |
+| R2 | entfällt (Nachtrag, O6): keine Moralsperre mehr | – |
 | R3 | `target` gehört der KI und `origin.realMorale - target.realMorale > 10` | Senden: `origin.numUnits / 4` (ganzzahlig) |
 | R4 | `target` gehört der KI und `origin.realShips - target.realShips > 10` | Senden: `(origin.realShips - target.realShips) / 2` |
 | R5 | `target` gehört der KI (sonst) | Nichts, weiter mit dem nächsten Ziel |
-| R6 | `target` ist neutral oder gegnerisch | Senden: `origin.numUnits * 3 / 4` |
+| R6 | `target` ist neutral oder gegnerisch, Stärkeprüfung (O7): `unterwegs` ≤ `target.numUnits` und `unterwegs + Menge` > `target.numUnits` | Senden: `origin.numUnits * 3 / 4` |
 
-- R1 und R2 werden vor jedem Ziel neu geprüft, weil sich `numUnits` durch Sendungen ändert (wie im Legacy-Code).
+- R1 wird vor jedem Ziel neu geprüft, weil sich `numUnits` durch Sendungen ändert (wie im Legacy-Code).
 - Eine berechnete Menge ≤ 0 wird nicht gesendet.
+- `unterwegs` (R6, O7) = Summe der eigenen Schiffe in Flotten, deren Ziel `target` ist, auch noch nicht gestartete. Ist `unterwegs` bereits größer als `target.numUnits`, wird nichts nachgeschickt.
 - Vergleiche sind strikt (`>`), also löst eine Differenz von genau 10 nicht aus.
 
 ### 2.3 Out of Scope (bewusst nicht ändern)
@@ -251,7 +252,6 @@ Die Klasse hat keine Abhängigkeit zu Swing, Thread oder `Game`.
 - Konstanten:
   ```
   MIN_SHIPS_TO_SEND = 10
-  MIN_MORALE_TO_SEND = 25
   MORALE_DIFF_FOR_REINFORCEMENT = 10
   SHIP_DIFF_FOR_REINFORCEMENT = 10
   ```
@@ -278,14 +278,14 @@ Die Klasse hat keine Abhängigkeit zu Swing, Thread oder `Game`.
   targets = Kopie von origin.getNear(), gemischt
   für target in targets:
       if origin.getNumUnits() < MIN_SHIPS_TO_SEND → break        // R1
-      if origin.getRealMorale() < MIN_MORALE_TO_SEND → break     // R2
+      (R2 entfällt, O6)
       if target.getOwner() == this:
           if origin.getRealMorale() - target.getRealMorale() > MORALE_DIFF_FOR_REINFORCEMENT
               → amount = origin.getNumUnits() / 4                // R3
           elif origin.getRealShips() - target.getRealShips() > SHIP_DIFF_FOR_REINFORCEMENT
               → amount = (origin.getRealShips() - target.getRealShips()) / 2   // R4
           else → continue                                        // R5
-      else → amount = origin.getNumUnits() * 3 / 4               // R6
+      else → amount = origin.getNumUnits() * 3 / 4 (nur wenn Stärkeprüfung O7 erfüllt, sonst continue)               // R6
       if amount > 0 → origin.sendFleet(amount, target)
   ```
 - Versand über `origin.sendFleet(...)` (Planet), nicht über `Player.sendFleet`.
@@ -317,7 +317,7 @@ Die Klasse hat keine Abhängigkeit zu Swing, Thread oder `Game`.
 | E6 | Moral an den Grenzen 0 oder 100 | Begrenzung, kein Unter- oder Überlauf |
 | E7 | Zielmoral wechselt mitten im Intervall | Kein Reset nötig, die Angleichung läuft über das Tick-Modulo weiter |
 | E8 | Eigener Planet mit < 10 Schiffen, aber hoher Moral | Kein Versand (R1) |
-| E9 | Moral < 25 | Kein Versand von diesem Planeten (R2), auch nicht an Gegner |
+| E9 | Moral < 25 | Kein Morale-Stopp mehr (R2 entfällt, O6). Versand läuft wie bei jeder Moral weiter |
 | E10 | Moraldifferenz genau 10 | Löst nicht aus (strikt `>`), Prüfung geht mit R4 weiter |
 | E11 | Eigenes Ziel, keine Bedingung erfüllt | Kein Versand (R5) |
 | E12 | Berechnete Menge ≤ 0 (z. B. negative Schiffsdifferenz) | Kein Versand |
@@ -333,6 +333,8 @@ Die Klasse hat keine Abhängigkeit zu Swing, Thread oder `Game`.
 | E22 | Hover über eigenem Planeten, aber Spiel beendet | Keine Anzeige, da `isGameRunning()` false ist |
 | E23 | `getProductionRate()` bei Moral 0 | Rückgabe 0.0, keine Produktion |
 | E24 | `getProductionRate()` bei neutralem Planeten | Rückgabe 0.0, unabhängig von der Moral. Abweichung zum Legacy-Code, siehe O5 |
+| E25 | Eigene Schiffe sind bereits unterwegs zum Ziel | Die Stärkeprüfung zählt sie mit. Reichen sie schon, wird nichts nachgeschickt (O7) |
+| E26 | Ziel wächst während des Fluges (Produktion des Gegners) | Nicht berücksichtigt. Der 1/4-Puffer am Ursprung dient als Sicherheitsabstand |
 
 ---
 
@@ -371,9 +373,9 @@ Es gibt keine automatisierten Tests im Projekt. Die Prüfung erfolgt manuell in 
 | TF-6 | Eroberung ohne Sprung | Planet erobern, Moral vorher und nachher prüfen | Moral bleibt erhalten, Produktion startet ohne Sprung |
 | TF-7 | KI-Ziele nur Nachbarn | `SinglePlayer`, KI-Flotten beobachten | Flotten fliegen nur zu Nachbarplaneten des Ursprungs |
 | TF-8 | KI-Schwelle 10 Schiffe | KI-Planet mit weniger als 10 Schiffen beobachten | Kein Versand von diesem Planeten |
-| TF-9 | KI-Schwelle Moral 25 | Planet der KI unter Druck setzen, bis Moral < 25 | Kein Versand von diesem Planeten |
+| TF-9 | KI unter Druck (Moral < 25) | Eigene Übermacht in der Nachbarschaft eines KI-Planeten, bis Moral < 25 | Keine Moralsperre (O6). Angriffe nur bei ausreichender Stärke (O7) |
 | TF-10 | KI-Verstärkung | KI mit mehreren eigenen Planeten, Moraldifferenz > 10 | Flotte zwischen eigenen Planeten, ca. 1/4 der Schiffe |
-| TF-11 | KI-Angriff | Neutraler Nachbar der KI | Flotte mit ca. 3/4 der Schiffe |
+| TF-11 | KI-Angriff | KI-Planet mit 100 Schiffen, neutraler Nachbar mit 50 Schiffen | Flotte mit 75 Schiffen (3/4). Bei 60 Schiffen am Nachbarn keine Flotte (O7) |
 | TF-12 | Tournament | `Tournament` starten | Zwei Partien, Seiten `Enemy AI 1` und `Enemy AI 2`, Ergebnis angezeigt, keine Exception |
 | TF-13 | Spielende stabil | Partie beenden, 30 s warten | Keine neuen Flotten nach Spielende, Anwendung reagiert |
 | TF-14 | Mensch-Versand unter Sperre | Mit der Maus senden, während die KI aktiv ist | Versand funktioniert, keine Exception |
@@ -385,12 +387,13 @@ Es gibt keine automatisierten Tests im Projekt. Die Prüfung erfolgt manuell in 
 | TF-20 | `getMorale()` für KI-Entwickler | Temporäre Test-KI liest `PlanetInfo.getMorale()` eigener und fremder Planeten | Werte stimmen mit der Hover-Anzeige überein, `sendFleet` funktioniert wie zuvor |
 | TF-21 | `getProductionRate()` mit Moral | Temporäre Test-KI liest `getProductionRate()` eines eigenen Planeten bei Moral 100 (Heimatplanet am Start), danach bei Moral ca. 50 (Angriff abwarten) | Bei Moral 100: `1 / getProductionTime()`. Bei Moral 50: halb so groß. Bei Moral 0: 0.0 |
 | TF-22 | `getProductionRate()` bei neutralem Planeten | Temporäre Test-KI liest `getProductionRate()` eines neutralen Planeten | 0.0 |
+| TF-23 | Stärkeprüfung (O7) | Zwei eigene Planeten mit je 100 Schiffen greifen denselben neutralen Nachbarn mit 50 Schiffen an (`EnemyAI.makeMove` mit Test-Harness oder Partie) | Genau eine Flotte geht auf den Nachbarn. Der zweite Planet schickt nichts nach |
 
 ### Abnahmekriterien
-- Alle Testfälle TF-1 bis TF-17 sowie TF-21 und TF-22 bestanden.
+- Alle Testfälle TF-1 bis TF-17 sowie TF-21 bis TF-23 bestanden.
 - Keine Exceptions in der Konsole.
 - `SamplePlayer` und die `Player`-Signaturen sind unverändert. `PlanetInfo` erhält `getMorale()`, `getProductionRate()` berücksichtigt die Moral, `README.md` ist entsprechend ergänzt.
-- Die Regeln R1–R6 und die Moral-Formeln stimmen mit dem Legacy-Code überein (Code-Review gegen `legacy/level.py` und `legacy/planet.py`).
+- Die Regeln R1, R3–R5 und die Moral-Formeln stimmen mit dem Legacy-Code überein (Code-Review gegen `legacy/level.py` und `legacy/planet.py`). R2 weicht bewusst ab (O6), R6 um die Stärkeprüfung (O7).
 
 ---
 
@@ -403,6 +406,8 @@ Es gibt keine automatisierten Tests im Projekt. Die Prüfung erfolgt manuell in 
 | O3 | Pausen | 500 ms in beiden Modi, wie im Legacy-Code (A8, Schritt 9 und 10). |
 | O4 | Sprache der Bezeichner und Kommentare | Englisch, wie im bestehenden galcon-Code. |
 | O5 | Produktion neutraler Planeten | Vorerst nicht. `Planet.update()` produziert nur bei Besitz, `PlanetInfo.getProductionRate()` liefert 0.0 bei `OWNER == null`. Das weicht vom Legacy-Code ab (`legacy/planet.py`, `loop`). Umsetzung als Folgepunkt F1. |
+| O6 | Moral als Sperre für den Versand der KI | Entfällt. Die Legacy-Regel R2 (Moral < 25 → kein Versand) ließ die KI bei menschlicher Übermacht vollständig passiv werden, obwohl Schiffe vorhanden waren. Simulation: Heimatplanet mit 128–167 Schiffen, 0 Flotten in 60 s. Die Moral wirkt weiter über Produktion (A4) und Verstärkung (R3). |
+| O7 | Angriff nur bei ausreichender Stärke | Gilt in allen Phasen. Die Regel greift nur dort, wo ein Angriff sonst scheitern würde (Garnison größer als die Menge). Die KI soll ihre Planeten nicht durch aussichtslose Wellen verlieren. Kein eigener Late-Game-Schalter nötig. Eigene Schiffe unterwegs zählen mit (E25). |
 
 ---
 
@@ -425,3 +430,5 @@ Es gibt keine automatisierten Tests im Projekt. Die Prüfung erfolgt manuell in 
 - Nachtrag (2026-11-16): Flimmern und unzuverlässiges Hovern behoben: `drawOverlay` wird nun in `Game.draw` direkt in den Offscreen-Puffer (`bufferedGraphics`) gezeichnet, anstatt in `Tournament.paint` ungepuffert auf den Front-Buffer (beseitigt 83 % Leer-Frames und extremes Flimmern). Hover-Erkennung in `HumanPlayer` um 4 px Toleranzrand (`HOVER_MARGIN`), `mouseDragged`, Textbox-Hover-Schutz und 1000 ms Verweilzeit (`HOVER_LINGER_MS`) erweitert, damit die Anzeige stabil stehen bleibt, solange man über dem Planeten oder der Textbox verweilt. `get_errors` für `Game.java`, `Tournament.java` und `HumanPlayer.java` ohne Befund.
 - Nachtrag (2026-11-16): Endscreen um interaktiven „Restart“-Button erweitert (`Tournament.java`). Klick beendet das Match und kehrt in `SinglePlayer.java` zum Startbildschirm zurück. Die kumulative Spielstatistik (`scoreHistory`) bleibt über Restarts hinweg erhalten und zählt fortlaufend weiter. `get_errors` für `Tournament.java` und `SinglePlayer.java` ohne Befund.
 - Nachtrag (2026-11-16): Spieltempo im SinglePlayer moderat gedrosselt (`SinglePlayer.java`): Fluggeschwindigkeit der Flotten von 1.5 auf 1.2 px/Tick gesenkt; Bedenkzeit der Gegner-KI von starren 500 ms auf menschlichere 800–1200 ms (Schnitt 1.0 s) angehoben. `get_errors` ohne Befund.
+- Nachtrag (2026-11-16): KI bleibt bei Moralverlust nicht mehr passiv (`EnemyAI.java`, O6). Die Moralsperre R2 (`realMorale < 25` → kein Versand) ist entfernt. Simulation (Wegwerf-Harness, nicht im Projekt): Bei menschlicher Übermacht um den KI-Heimatplaneten blieb die KI vorher 60 s ohne Flotte, nachher sendet sie wieder. Die Kontrollpartie ohne Übermacht bleibt unverändert. `get_errors` für `EnemyAI.java` ohne Befund. Offen (nicht Teil dieses Nachtrags): Die KI schickt weiterhin 3/4 der Schiffe ohne Stärkevergleich (Legacy R6). Bei starker Übermacht kann dadurch der Heimatplanet schnell leer und die Moral 0 werden (A4, keine Produktion).
+- Nachtrag (2026-11-16): Der offene Punkt ist umgesetzt (O7). R6 greift nur, wenn die Menge plus eigene Schiffe unterwegs zum Ziel die Garnison übersteigt (`EnemyAI.isStrongEnough`, `shipsHeadingTo`). Unterwegs befindliche Schiffe werden nicht überschritten. Die Zählung läuft unter den Sperren aus Abschnitt 3.1 (Reihenfolge `planets`, dann `fleets`). Simulation (Wegwerf-Harness, nicht im Projekt): Bei zwei eigenen Planeten gegen denselben Nachbarn geht in 19 von 20 Läufen genau eine Flotte (der eine Lauf ohne Flotte hatte als Ziel die Menschen-Heimat mit 250 Schiffen). Die Kontrollpartie endet weiterhin mit einem KI-Sieg. Bei starker menschlicher Übermacht hält die KI ihre Planeten und greift erst an, wenn ein Angriff reicht. `get_errors` für `EnemyAI.java` ohne Befund. Offen: Bündelung mehrerer eigener Planeten gegen ein starkes Ziel ist nicht umgesetzt. Jeder Ursprung bewertet seine Menge allein.

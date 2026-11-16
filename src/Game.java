@@ -20,6 +20,7 @@ public class Game extends JFrame implements ActionListener
 
 	private Tournament parent = null; //Each game could potentially be part of a different tournament
 	private final double shipSpeed; //Flight speed of the ships in this game, given by the tournament
+	private final Difficulty difficulty; //Map setup, given by the tournament
 
 	private static final int NUM_PLANETS = 16;
 
@@ -31,6 +32,7 @@ public class Game extends JFrame implements ActionListener
 		p2 = player2;
 		this.parent = parent;
 		shipSpeed = parent.getShipSpeed();
+		difficulty = parent.getDifficulty(); //Read before the map is generated
 
 		winner = null;
 		fleets = Collections.synchronizedSet(new HashSet<Fleet>());
@@ -181,7 +183,12 @@ public class Game extends JFrame implements ActionListener
 			planets.add(new Planet(p1, this)); //Give player 1 a starting planet
 			planets.add(new Planet(p2, this)); //Give player 2 a starting planet
 
-			for (int i = 0 ; i < NUM_PLANETS - 2; i++) //Add the rest of the planets as neutral
+			//Extra AI planets with 10-29 ships (as Legacy rr(10,30)), owned by player 2 (the AI in single player)
+			for (int i = 1; i < difficulty.getAiPlanets(); i++) //The AI home planet is already added
+			{
+				planets.add(new Planet(this, p2, 10 + (int) (Math.random() * 20)));
+			}
+			for (int i = 0; i < difficulty.getNeutralPlanets(NUM_PLANETS); i++) //Add the rest of the planets as neutral
 			{
 				planets.add(new Planet(this));
 			}
