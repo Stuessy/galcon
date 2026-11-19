@@ -51,6 +51,14 @@ public class Tournament extends JFrame
 	public static final int RESTART_BTN_WIDTH = 200;
 	public static final int RESTART_BTN_HEIGHT = 48;
 
+	//Share button in the lower right corner of the game area (game coordinates, below the top bar)
+	public static final int SHARE_BTN_SIZE = 56;
+	public static final int SHARE_BTN_MARGIN = 16; //Distance to the right and bottom border
+	public static final int SHARE_BTN_X = WIN_WIDTH - SHARE_BTN_MARGIN - SHARE_BTN_SIZE; //888
+	public static final int SHARE_BTN_Y = WIN_HEIGHT - SHARE_BTN_MARGIN - SHARE_BTN_SIZE; //468
+	public static final int SHARE_BTN_CLEARANCE = 12; //Planet edge plus rings (up to radius + 11) must stay this far from the button
+
+
 	private Player[] winners; //An array holding the list of winners of the current tournament
 	private final List<String> scoreHistory; //Cumulative history of winner names across restarts
 	private final CountDownLatch restartLatch = new CountDownLatch(1);
@@ -308,6 +316,17 @@ public class Tournament extends JFrame
 	public static int genY(int rad)
 	{
 		return (int) (Math.random() * (WIN_HEIGHT - rad * 2) + rad);
+	}
+	//True if a planet with this center and radius would touch the share button, including the clearance
+	public static boolean isInShareButtonArea(int cx, int cy, int radius)
+	{
+		//Nearest point of the button to the planet center
+		int nx = Math.max(SHARE_BTN_X, Math.min(cx, SHARE_BTN_X + SHARE_BTN_SIZE));
+		int ny = Math.max(SHARE_BTN_Y, Math.min(cy, SHARE_BTN_Y + SHARE_BTN_SIZE));
+		int dx = cx - nx;
+		int dy = cy - ny;
+		int reach = radius + SHARE_BTN_CLEARANCE;
+		return dx * dx + dy * dy <= reach * reach;
 	}
 	//Get a player's color, or return DARK_GRAY if player is null
 	public static Color getPlayerColor(Player player)

@@ -45,7 +45,7 @@ public class Planet
 		//Try to find a safe landing zone for our planet
 		int x = Tournament.genX(RADIUS);
 		int y = Tournament.genY(RADIUS);
-		while (parent.isPlanetOverlapping(x, y, RADIUS))
+		while (parent.isPlanetOverlapping(x, y, RADIUS) || Tournament.isInShareButtonArea(x, y, RADIUS))
 		{
 			x = Tournament.genX(RADIUS);
 			y = Tournament.genY(RADIUS);
@@ -71,7 +71,7 @@ public class Planet
 		int x = Tournament.genX(RADIUS);
 		int y = Tournament.genY(RADIUS);
 		
-		while (parent.isPlanetOverlapping(x, y, RADIUS))
+		while (parent.isPlanetOverlapping(x, y, RADIUS) || Tournament.isInShareButtonArea(x, y, RADIUS))
 		{
 			x = Tournament.genX(RADIUS);
 			y = Tournament.genY(RADIUS);

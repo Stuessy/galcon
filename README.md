@@ -37,13 +37,15 @@ Players start with 1 large "home planet" and send off ships to conquer other pla
 ## Controls (Single Player)
 * **Click one of your planets** to mark it. A white ring marks the selection. Click it again to remove the mark.
 * **Double-click one of your planets** to mark all of your planets.
-* **Drag from one of your planets onto another planet** (own, neutral or enemy) and release the mouse there. Every marked planet, and the planet you dragged from, sends half of its ships to the target. The marks are cleared afterwards.
+* **Drag from one of your planets onto another planet** (own, neutral or enemy) and release the mouse there. Every marked planet, and the planet you dragged from, sends the share shown on the button (default 50 %) of its ships to the target. The marks are cleared afterwards.
 * While dragging, the planet you dragged from gets a white ring, even if it was not marked before.
 * While dragging, every sending planet (each marked planet and the planet you dragged from) draws a white line from its center to the mouse pointer.
 * While dragging, the planet under the pointer is highlighted in green if it is a valid target (every planet except the one you dragged from).
 * **Click empty space or a planet that is not yours** to clear all marks.
 * Releasing the mouse on empty space, or on the planet you dragged from, does nothing.
 * **Hover over one of your planets** to see its stats: production (ships per second) / morale / ships.
+* **Click the share button** in the lower right corner to change the share of ships that is sent: 25 %, 50 %, 75 % or 100 %. The pie chart shows the setting, hovering over the button shows the percentage. Every game starts with 50 %.
+
 
 ## Game Concepts
 * **Ships:** The number on a planet is its number of ships. In single player, the ship count of enemy planets is hidden, except on Easy.

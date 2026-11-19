@@ -16,7 +16,9 @@ import javax.swing.SwingUtilities;
 
 /*
  * A player that is controlled by the mouse instead of an AI.
- * Drag from one of your planets onto another planet to send half of its ships there. The target may be own, neutral or enemy.
+ * Drag from one of your planets onto another planet to send the share shown on the button in the lower right corner (25, 50, 75 or 100 %, default 50 %) of its ships there.
+ * A click on the share button in the lower right corner cycles the share to the next step. Hovering over it shows the current share.
+ * The target may be own, neutral or enemy.
  * A click on one of your planets marks it. A double click on one of your planets marks all of your planets.
  * If a drag starts on a marked planet, all marked planets send to the target. The marks are cleared after each order.
  * While dragging, a valid target under the pointer is highlighted in green.
@@ -27,7 +29,11 @@ public class HumanPlayer extends Player
 {
 	final String NAME = "Human Player";
 	final Color COLOR; //Chosen on the start screen
-	public static final double SHIP_SHARE = 0.5; //Share of the ships of the origin planet that are sent
+	private static final int[] SHARE_STEPS = {25, 50, 75, 100}; //Percent of the ships sent per origin, cycled by the button
+	private static final int DEFAULT_SHARE_STEP = 1; //Index of 50 %, every game starts with it (S3)
+	private static final Color SHARE_BTN_BG = new Color(40, 80, 150); //Same blue as the restart button
+	private int shareStep = DEFAULT_SHARE_STEP; //Index into SHARE_STEPS, only accessed from the event dispatch thread
+	private boolean shareHovered = false; //True while the mouse is over the share button, only accessed from the event dispatch thread
 	private static final int SELECTION_MARGIN = 6; //Distance between planet border and selection ring
 	private static final int STATS_GAP = 8; //Distance between planet border and the stats text
 	private static final int HOVER_MARGIN = 4; //Generous margin around planet border so hover triggers easily
@@ -114,6 +120,7 @@ public class HumanPlayer extends Player
 			public void mouseExited(MouseEvent e)
 			{
 				hoveredPlanet = null;
+				shareHovered = false;
 			}
 		};
 		window.getContentPane().addMouseListener(adapter);
@@ -160,6 +167,47 @@ public class HumanPlayer extends Player
 				hoveredPlanet = null;
 			}
 		}
+		if (isGameRunning()) //Hidden in the endscreen
+		{
+			drawShareButton(g);
+		}
+	}
+
+	//Square button with rounded corners, the filled part of the pie shows the chosen share
+	private void drawShareButton(Graphics g)
+	{
+		int x = Tournament.SHARE_BTN_X;
+		int y = Tournament.SHARE_BTN_Y;
+		int size = Tournament.SHARE_BTN_SIZE;
+		int pad = 10; //Space between button border and pie
+		int d = size - 2 * pad;
+		g.setColor(SHARE_BTN_BG);
+		g.fillRoundRect(x, y, size, size, 12, 12);
+		g.setColor(Color.WHITE);
+		g.drawRoundRect(x, y, size, size, 12, 12);
+		//Angles start at 12 o'clock (90 degrees), a negative sweep runs clockwise
+		g.fillArc(x + pad, y + pad, d, d, 90, -360 * SHARE_STEPS[shareStep] / 100);
+		g.drawOval(x + pad, y + pad, d, d);
+		if (shareHovered)
+		{
+			drawShareLabel(g);
+		}
+	}
+
+	//Current share in percent, shown above the right edge of the button while the pointer is over it
+	private void drawShareLabel(Graphics g)
+	{
+		String text = SHARE_STEPS[shareStep] + " %";
+		g.setFont(STATS_FONT);
+		FontMetrics fm = g.getFontMetrics();
+		int w = fm.stringWidth(text) + 8;
+		int h = fm.getHeight() + 4;
+		int x = Tournament.SHARE_BTN_X + Tournament.SHARE_BTN_SIZE - w;
+		int y = Tournament.SHARE_BTN_Y - h - 4;
+		g.setColor(SHARE_BTN_BG);
+		g.fillRoundRect(x, y, w, h, 8, 8);
+		g.setColor(Color.WHITE);
+		g.drawString(text, x + 4, y + 2 + fm.getAscent());
 	}
 
 	//White ring around a marked own planet
@@ -170,6 +218,7 @@ public class HumanPlayer extends Player
 		g.drawOval(p.getX() - r, p.getY() - r, 2 * r, 2 * r);
 	}
 
+	//One line from the center of each sending planet to the pointer, and a highlight around a valid target under the pointer
 	//One line from the center of each sending planet to the pointer, and a highlight around a valid target under the pointer
 	private void drawDragFeedback(Graphics g)
 	{
@@ -209,6 +258,12 @@ public class HumanPlayer extends Player
 		Point p = toGameCoordinates(e, window);
 		int gx = p.x;
 		int gy = p.y;
+		shareHovered = isInShareButton(gx, gy); //Share label is shown while the pointer is over the button (B8)
+		if (shareHovered)
+		{
+			hoveredPlanet = null; //Do not show lingering planet stats while the pointer is over the button
+			return;
+		}
 		Planet under = findPlanetAt(gx, gy, HOVER_MARGIN);
 		if (under != null)
 		{
@@ -268,6 +323,17 @@ public class HumanPlayer extends Player
 	//Left button pressed: remember the start planet and the click count, a drag starts only when the start area is left
 	private void handlePress(int x, int y, int clickCount)
 	{
+		shareHovered = isInShareButton(x, y); //The label shows right after a click, without a prior mouse move (B8)
+		if (isGameRunning() && shareHovered)
+		{
+			//The share button takes the click, marks and gestures are not touched
+			pressActive = false; //No drag and no release action for this press
+			dragging = false;
+			pressedPlanet = null;
+			shareStep = (shareStep + 1) % SHARE_STEPS.length;
+			lastClickPlanet = null; //A button click breaks a double click chain (S4)
+			return;
+		}
 		pressActive = true;
 		dragging = false;
 		pressX = x;
@@ -364,7 +430,7 @@ public class HumanPlayer extends Player
 		}
 	}
 
-	//Every origin sends half of its ships to the target, then all marks are cleared
+	//Every origin sends the chosen share of its ships to the target, then all marks are cleared
 	//Called under the planets lock
 	private void sendFromMarked(Planet start, Planet target)
 	{
@@ -373,20 +439,27 @@ public class HumanPlayer extends Player
 		{
 			for (Planet origin: origins)
 			{
-				sendHalfOfShips(origin, target);
+				sendShareOfShips(origin, target);
 			}
 			selectedPlanets.clear();
 		}
 	}
 
-	//Sends half of the ships of the origin, called under the planets lock
-	private void sendHalfOfShips(Planet origin, Planet target)
+	//Sends the chosen share of the ships of the origin, called under the planets lock
+	private void sendShareOfShips(Planet origin, Planet target)
 	{
-		int units = (int) (origin.getNumUnits() * SHIP_SHARE);
+		int units = (int) ((long) origin.getNumUnits() * SHARE_STEPS[shareStep] / 100); //Rounded down without intermediate overflow
 		if (units > 0)
 		{
 			origin.sendFleet(units, target);
 		}
+	}
+
+	//True if the game coordinates lie on the share button
+	private static boolean isInShareButton(int x, int y)
+	{
+		return x >= Tournament.SHARE_BTN_X && x <= Tournament.SHARE_BTN_X + Tournament.SHARE_BTN_SIZE
+				&& y >= Tournament.SHARE_BTN_Y && y <= Tournament.SHARE_BTN_Y + Tournament.SHARE_BTN_SIZE;
 	}
 
 	//Origins of a drag: all marked own planets plus the start planet, without the target (O3, O8)
