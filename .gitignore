@@ -12,3 +12,6 @@ bin
 
 #Folder Cruft
 .DS_Store
+
+# Legacy Folder with old files
+/legacy/
